@@ -33,7 +33,7 @@
 
 -(void)inputButtonPressed
 {
-    if ([delegate respondsToSelector:@selector(inputButtonPressed:)]) 
+    if ([delegate respondsToSelector:@selector(inputButtonPressed:)])
     {
         [delegate inputButtonPressed:self.textView.text];
     }
@@ -41,6 +41,14 @@
     /* Remove the keyboard and clear the text */
     [self.textView resignFirstResponder];
     [self.textView clearText];
+}
+
+- (void) leftButtonPressed
+{
+    if ([delegate respondsToSelector:@selector(leftButtonPressed:)])
+    {
+        [delegate leftButtonPressed:self.textView.text];
+    }
 }
 
 -(void)setupToolbar:(NSString *)buttonLabel
@@ -63,14 +71,26 @@
     [button setTitle:buttonLabel forState:UIControlStateNormal];
     [button addTarget:self action:@selector(inputButtonPressed) forControlEvents:UIControlEventTouchDown];
     [button sizeToFit];
+    [button setWidth:[buttonLabel sizeWithFont:button.titleLabel.font].width+20.0];
     
     self.inputButton = [[[UIBarButtonItem alloc] initWithCustomView:button] autorelease];
-    self.inputButton.customView.autoresizingMask = UIViewAutoresizingFlexibleTopMargin;
+    self.inputButton.customView.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;
     /* Disable button initially */
     self.inputButton.enabled = NO;
-
+    
+    /* Create custom mic button*/
+    UIImage *micImage = [UIImage imageNamed:@"SendButtonDisabled"];
+    
+    UIButton *micButton               = [UIButton buttonWithType:UIButtonTypeCustom];
+    [micButton setImage:micImage forState:UIControlStateNormal];
+    [micButton addTarget:self action:@selector(leftButtonPressed) forControlEvents:UIControlEventTouchDown];
+    [micButton setFrame:CGRectMake(0, 0, micImage.size.width, micImage.size.height)];
+    
+    self.leftButton = [[[UIBarButtonItem alloc] initWithCustomView:micButton] autorelease];
+    self.leftButton.customView.autoresizingMask = UIViewAutoresizingFlexibleTopMargin;
+    
     /* Create UIExpandingTextView input */
-    self.textView = [[[UIExpandingTextView alloc] initWithFrame:CGRectMake(7, 7, 236, 26)] autorelease];
+    self.textView = [[[UIExpandingTextView alloc] initWithFrame:CGRectMake(45, 7, 175, 26)] autorelease];
     self.textView.internalTextView.scrollIndicatorInsets = UIEdgeInsetsMake(4.0f, 0.0f, 10.0f, 0.0f);
     self.textView.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleWidth;
     self.textView.delegate = self;
@@ -79,14 +99,14 @@
     /* Right align the toolbar button */
     UIBarButtonItem *flexItem = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil] autorelease];
     
-    NSArray *items = [NSArray arrayWithObjects: flexItem, self.inputButton, nil];
+    NSArray *items = [NSArray arrayWithObjects: self.leftButton, flexItem, self.inputButton, nil];
     [self setItems:items animated:NO];
 }
 
 -(id)initWithFrame:(CGRect)frame
 {
     if ((self = [super initWithFrame:frame])) {
-        [self setupToolbar:@"Send"];
+        [self setupToolbar:@"Envoyer"];
     }
     return self;
 }
@@ -94,12 +114,12 @@
 -(id)init
 {
     if ((self = [super init])) {
-        [self setupToolbar:@"Send"];
+        [self setupToolbar:@"Envoyer"];
     }
     return self;
 }
 
-- (void)drawRect:(CGRect)rect 
+- (void)drawRect:(CGRect)rect
 {
     /* Draw custon toolbar background */
     UIImage *backgroundImage = [UIImage imageNamed:@"toolbarbg.png"];
@@ -109,12 +129,17 @@
     CGRect i = self.inputButton.customView.frame;
     i.origin.y = self.frame.size.height - i.size.height - 7;
     self.inputButton.customView.frame = i;
+    
+    i = self.leftButton.customView.frame;
+    i.origin.y = self.frame.size.height - i.size.height - 6;
+    self.leftButton.customView.frame = i;
 }
 
 - (void)dealloc
 {
     [textView release];
     [inputButton release];
+    [_leftButton release];
     [super dealloc];
 }
 
@@ -136,9 +161,15 @@
 {
     /* Enable/Disable the button */
     if ([expandingTextView.text length] > 0)
+    {
         self.inputButton.enabled = YES;
+        self.leftButton.enabled = NO;
+    }
     else
+    {
         self.inputButton.enabled = NO;
+        self.leftButton.enabled = YES;
+    }
 }
 
 @end
